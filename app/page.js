@@ -1,115 +1,87 @@
 'use client'
-
-import Image from "next/image";
-import styles from "./page.module.css";
+import { useEffect, useState } from 'react';
 import { useAuthState } from "react-firebase-hooks/auth";
-import {auth} from '@/app/firebase/config'
+import { auth } from '@/app/firebase/config';
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-
+import { Box, Stack, TextField, Button } from '@mui/material';
 
 export default function Home() {
+  ///auth
   const [user] = useAuthState(auth);
-  const router = useRouter()
-  const userSession = sessionStorage.getItem('user');
+  const [userSession, setUserSession] = useState(null);
+  const router = useRouter();
+  ///auth
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: "Hi! I'm the Headstarter support assistant. How can I help you today?" }
+  ]);
 
-  console.log({user})
-      if (!user && !userSession) {
-        router.push('/sign-up')
-      }
+  ///auth
+  useEffect(() => {
+    if (!user && !userSession) {
+      router.push('/sign-in');
+    }
+  }, [user, userSession, router]);
 
+  const sendMessage = async () => {
+    // Add the user message to the messages array
+    const newMessages = [...messages, { role: 'user', content: message }];
+    setMessages(newMessages);
+
+    // Send the message to the API
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userPrompt: message }),
+    });
+
+    // Process the streaming response
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let result = '';
+
+    // Read the response stream
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      result += decoder.decode(value, { stream: true });
+      // Update the last assistant message in the state with the current result
+      setMessages([...newMessages, { role: 'assistant', content: result }]);
+    }
+
+    setMessage(''); // Clear the input field
+  };
+
+  const [message, setMessage] = useState('');
 
   return (
-    <main className={styles.main}>
-      <button onClick={() => {
-        signOut(auth) 
-        sessionStorage.removeItem('user')}} >Log Out</button>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    <Box
+      width="100vw"
+      height="100vh"
+      display="flex"
+      flexDirection="column"
+      justifyContent="center"
+      alignItems="center"
+    >
+      <Stack direction={'column'} width="700px" height="700px" border="1px solid white" p={2}>
+        <Stack direction={'column'} spacing={2} flexGrow={1} overflow="auto" maxHeight="100%">
+          {
+            messages.map((msg, index) => (
+              <Box key={index} display="flex" justifyContent={msg.role === 'assistant' ? 'flex-start' : 'flex-end'}>
+                <Box bgcolor={msg.role === 'assistant' ? 'primary.main' : 'secondary.main'} color="white" borderRadius={13} p={2} margin={1.5}>
+                  {msg.content}
+                </Box>
+              </Box>
+            ))
+          }
+        </Stack>
+        <Stack direction={'row'} spacing={2} marginTop={2}>
+          <TextField label="Message" fullWidth value={message} onChange={(e) => setMessage(e.target.value)} sx={{ backgroundColor: 'white' }} />
+          <Button variant="contained" onClick={sendMessage}>Send</Button>
+        </Stack>
+      </Stack>
+    </Box>
   );
 }

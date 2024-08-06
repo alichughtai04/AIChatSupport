@@ -12,14 +12,17 @@ const SignUp = () => {
   const [createUserWithEmailAndPassword] = useCreateUserWithEmailAndPassword(auth);
 
   const handleSubmit = async () => {
-    try{
-        const res = await createUserWithEmailAndPassword(email, password)
-        console.log({res})
-        sessionStorage.setItem('user', true)
-        setEmail('');
-        setPassword('');
-    } catch(e) {
-        console.error(e)
+    try {
+      const res = await createUserWithEmailAndPassword(email, password);
+      console.log({ res });
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('user', true);
+      }
+      setEmail('');
+      setPassword('');
+      // Redirect to home or another page if needed
+    } catch (e) {
+      console.error(e);
     }
   };
 
