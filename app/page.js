@@ -18,7 +18,7 @@ export default function Home() {
 
   ///auth
   useEffect(() => {
-    if (!user && !userSession) {
+    if (!user) {
       router.push('/sign-in');
     }
   }, [user, userSession, router]);
@@ -57,7 +57,22 @@ export default function Home() {
   const [message, setMessage] = useState('');
 
   return (
-    <Box
+    <><Button
+      variant="contained"
+      width="20vw"
+      sx={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        margin: 2
+      }}
+      onClick={() => {
+        signOut(auth);
+        sessionStorage.removeItem('user');
+      } }
+    >
+      Log Out
+    </Button><Box
       width="100vw"
       height="100vh"
       display="flex"
@@ -65,23 +80,26 @@ export default function Home() {
       justifyContent="center"
       alignItems="center"
     >
-      <Stack direction={'column'} width="700px" height="700px" border="1px solid white" p={2}>
-        <Stack direction={'column'} spacing={2} flexGrow={1} overflow="auto" maxHeight="100%">
-          {
-            messages.map((msg, index) => (
+      <Box sx={{marginBottom: 6,
+        fontSize: '2rem', 
+        fontWeight: 'bold',
+        borderBottom: '4px solid white', 
+        borderRadius: '5px' }} >Chat Support</Box>
+        <Stack direction={'column'} width="600px" height="650px" border="1px solid white" p={2}>
+          <Stack direction={'column'} spacing={2} flexGrow={1} overflow="auto" maxHeight="100%">
+            {messages.map((msg, index) => (
               <Box key={index} display="flex" justifyContent={msg.role === 'assistant' ? 'flex-start' : 'flex-end'}>
                 <Box bgcolor={msg.role === 'assistant' ? 'primary.main' : 'secondary.main'} color="white" borderRadius={13} p={2} margin={1.5}>
                   {msg.content}
                 </Box>
               </Box>
-            ))
-          }
+            ))}
+          </Stack>
+          <Stack direction={'row'} spacing={2} marginTop={2}>
+            <TextField label="Message" fullWidth value={message} onChange={(e) => setMessage(e.target.value)} sx={{ backgroundColor: 'white' }} />
+            <Button variant="contained" onClick={sendMessage}>Send</Button>
+          </Stack>
         </Stack>
-        <Stack direction={'row'} spacing={2} marginTop={2}>
-          <TextField label="Message" fullWidth value={message} onChange={(e) => setMessage(e.target.value)} sx={{ backgroundColor: 'white' }} />
-          <Button variant="contained" onClick={sendMessage}>Send</Button>
-        </Stack>
-      </Stack>
-    </Box>
+      </Box></>
   );
 }

@@ -4,27 +4,29 @@ import '../../app/sign-up/page.css';
 import {useCreateUserWithEmailAndPassword} from 'react-firebase-hooks/auth'
 import {auth} from '@/app/firebase/config'
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter();
 
-  const [createUserWithEmailAndPassword] = useCreateUserWithEmailAndPassword(auth);
+  const [createUserWithEmailAndPassword, user, loading, error] = useCreateUserWithEmailAndPassword(auth);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Prevent the default form submission behavior
     try {
       const res = await createUserWithEmailAndPassword(email, password);
-      console.log({ res });
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('user', true);
-      }
+      console.log('Sign Up Response:', res);
+      sessionStorage.setItem('user', true);
       setEmail('');
       setPassword('');
-      // Redirect to home or another page if needed
+      router.push('/');
     } catch (e) {
-      console.error(e);
+      console.error('Sign Up Error:', e);
     }
   };
+
 
   return (
     <div className="signup-container">
